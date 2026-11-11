@@ -1,0 +1,258 @@
+{
+  "variables": [
+    "Edad",
+    "Género",
+    "Tipo_de_suscripción",
+    "Horas_vistas",
+    "Días_desde_último_acceso",
+    "Región",
+    "Dispositivo",
+    "Método_de_pago",
+    "Número_de_perfiles",
+    "Género_favorito"
+  ],
+  "variable_objetivo": "Abandono",
+  "columnas_numericas": [
+    "Edad",
+    "Horas_vistas",
+    "Días_desde_último_acceso",
+    "Número_de_perfiles"
+  ],
+  "columnas_categoricas": [
+    "Género",
+    "Tipo_de_suscripción",
+    "Región",
+    "Dispositivo",
+    "Método_de_pago",
+    "Género_favorito"
+  ],
+  "equivalencias": {
+    "Género": {
+      "Female": 0,
+      "Male": 1,
+      "Other": 2
+    },
+    "Tipo_de_suscripción": {
+      "Basic": 0,
+      "Premium": 1,
+      "Standard": 2
+    },
+    "Región": {
+      "Africa": 0,
+      "Asia": 1,
+      "Europe": 2,
+      "North America": 3,
+      "Oceania": 4,
+      "South America": 5
+    },
+    "Dispositivo": {
+      "Desktop": 0,
+      "Laptop": 1,
+      "Mobile": 2,
+      "TV": 3,
+      "Tablet": 4
+    },
+    "Método_de_pago": {
+      "Credit Card": 0,
+      "Crypto": 1,
+      "Debit Card": 2,
+      "Gift Card": 3,
+      "PayPal": 4
+    },
+    "Género_favorito": {
+      "Action": 0,
+      "Comedy": 1,
+      "Documentary": 2,
+      "Drama": 3,
+      "Horror": 4,
+      "Romance": 5,
+      "Sci-Fi": 6
+    }
+  },
+  "rangos": {
+    "Edad": {
+      "min": 18.0,
+      "max": 70.0,
+      "mediana": 44.0
+    },
+    "Horas_vistas": {
+      "min": 0.01,
+      "max": 35.03,
+      "mediana": 7.46
+    },
+    "Días_desde_último_acceso": {
+      "min": 0.0,
+      "max": 60.0,
+      "mediana": 30.0
+    },
+    "Número_de_perfiles": {
+      "min": 1.0,
+      "max": 5.0,
+      "mediana": 3.0
+    }
+  },
+  "modelos": {
+    "Regresión logística simple": {
+      "archivo": "1_logistica_simple.joblib",
+      "variables": [
+        "Días_desde_último_acceso"
+      ],
+      "hiperparametros": {},
+      "metricas": {
+        "Exactitud (Accuracy)": 0.7513,
+        "Precisión (Precision)": 0.7639,
+        "Sensibilidad (Recall)": 0.7654,
+        "Puntaje F1": 0.7646,
+        "AUC ROC": 0.8026,
+        "Exactitud entrenamiento": 0.7453
+      }
+    },
+    "Regresión logística múltiple": {
+      "archivo": "2_logistica_multiple.joblib",
+      "variables": [
+        "Edad",
+        "Género",
+        "Tipo_de_suscripción",
+        "Horas_vistas",
+        "Días_desde_último_acceso",
+        "Región",
+        "Dispositivo",
+        "Método_de_pago",
+        "Número_de_perfiles",
+        "Género_favorito"
+      ],
+      "hiperparametros": {
+        "logisticregression__C": 1
+      },
+      "metricas": {
+        "Exactitud (Accuracy)": 0.8688,
+        "Precisión (Precision)": 0.8735,
+        "Sensibilidad (Recall)": 0.8787,
+        "Puntaje F1": 0.8761,
+        "AUC ROC": 0.9488,
+        "Exactitud entrenamiento": 0.8732
+      }
+    },
+    "Regresión logística polinomial": {
+      "archivo": "3_logistica_polinomial.joblib",
+      "variables": [
+        "Edad",
+        "Género",
+        "Tipo_de_suscripción",
+        "Horas_vistas",
+        "Días_desde_último_acceso",
+        "Región",
+        "Dispositivo",
+        "Método_de_pago",
+        "Número_de_perfiles",
+        "Género_favorito"
+      ],
+      "hiperparametros": {
+        "logisticregression__C": 0.1,
+        "polynomialfeatures__degree": 2
+      },
+      "metricas": {
+        "Exactitud (Accuracy)": 0.8793,
+        "Precisión (Precision)": 0.8819,
+        "Sensibilidad (Recall)": 0.8907,
+        "Puntaje F1": 0.8863,
+        "AUC ROC": 0.9503,
+        "Exactitud entrenamiento": 0.8855
+      }
+    },
+    "Árbol de decisión": {
+      "archivo": "4_arbol_decision.joblib",
+      "variables": [
+        "Edad",
+        "Género",
+        "Tipo_de_suscripción",
+        "Horas_vistas",
+        "Días_desde_último_acceso",
+        "Región",
+        "Dispositivo",
+        "Método_de_pago",
+        "Número_de_perfiles",
+        "Género_favorito"
+      ],
+      "hiperparametros": {
+        "criterion": "entropy",
+        "max_depth": 10,
+        "min_samples_leaf": 20
+      },
+      "metricas": {
+        "Exactitud (Accuracy)": 0.9622,
+        "Precisión (Precision)": 0.9465,
+        "Sensibilidad (Recall)": 0.9841,
+        "Puntaje F1": 0.9649,
+        "AUC ROC": 0.9907,
+        "Exactitud entrenamiento": 0.9732
+      }
+    },
+    "Bosques aleatorios": {
+      "archivo": "5_bosques_aleatorios.joblib",
+      "variables": [
+        "Edad",
+        "Género",
+        "Tipo_de_suscripción",
+        "Horas_vistas",
+        "Días_desde_último_acceso",
+        "Región",
+        "Dispositivo",
+        "Método_de_pago",
+        "Número_de_perfiles",
+        "Género_favorito"
+      ],
+      "hiperparametros": {
+        "max_depth": null,
+        "min_samples_leaf": 5
+      },
+      "metricas": {
+        "Exactitud (Accuracy)": 0.9612,
+        "Precisión (Precision)": 0.9736,
+        "Sensibilidad (Recall)": 0.9523,
+        "Puntaje F1": 0.9628,
+        "AUC ROC": 0.9948,
+        "Exactitud entrenamiento": 0.989
+      }
+    },
+    "Máquina de vectores de soporte": {
+      "archivo": "6_svm.joblib",
+      "variables": [
+        "Edad",
+        "Género",
+        "Tipo_de_suscripción",
+        "Horas_vistas",
+        "Días_desde_último_acceso",
+        "Región",
+        "Dispositivo",
+        "Método_de_pago",
+        "Número_de_perfiles",
+        "Género_favorito"
+      ],
+      "hiperparametros": {
+        "svc__C": 1,
+        "svc__kernel": "linear"
+      },
+      "metricas": {
+        "Exactitud (Accuracy)": 0.8657,
+        "Precisión (Precision)": 0.8641,
+        "Sensibilidad (Recall)": 0.8847,
+        "Puntaje F1": 0.8743,
+        "AUC ROC": 0.9485,
+        "Exactitud entrenamiento": 0.8729
+      }
+    }
+  },
+  "datos": {
+    "renglones_limpios": 4762,
+    "entrenamiento": 3809,
+    "prueba": 953
+  },
+  "versiones": {
+    "python": "3.13.18",
+    "scikit-learn": "1.9.1",
+    "pandas": "3.0.5",
+    "numpy": "2.5.3",
+    "joblib": "1.6.0"
+  }
+}
