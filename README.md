@@ -20,8 +20,8 @@ Aplicación web en **Streamlit** que reúne los seis modelos de clasificación d
 Las métricas se calcularon sobre el mismo conjunto de prueba: 953 clientes, el 20 % del dataset limpio.
 
 ## Qué hace la app
-- **🔮 Simulador:** eliges un modelo, cambias edad, horas vistas, días desde el último acceso, número de perfiles, género, tipo de suscripción, método de pago, región, dispositivo y género favorito, y ves la predicción con su probabilidad de abandono.
-- **🎲 Cliente real:** carga al azar un cliente del conjunto de prueba y muestra si el modelo acertó.
+- **🔮 Simulador:** (1) seleccionas el modelo, (2) escribes con el teclado las variables del cliente (edad, horas vistas, días desde el último acceso y número de perfiles, siempre dentro de los rangos del dataset limpio) y eliges género, tipo de suscripción, método de pago, región, dispositivo y género favorito, y (3) presionas **Calcular** para ver la predicción con su probabilidad de abandono, calculada con el modelo elegido.
+- **🎲 Cliente real:** llena el formulario con un cliente al azar del conjunto de prueba; al calcular, muestra si el modelo acertó.
 - **⚖️ Comparar los 6 modelos:** el mismo cliente evaluado por los seis modelos, con la decisión por mayoría.
 - **📊 Métricas:** la tabla comparativa y la revisión de sobreentrenamiento.
 

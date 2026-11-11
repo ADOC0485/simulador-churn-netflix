@@ -172,23 +172,20 @@ def cargar_cliente_real():
         else:
             valores[col] = int(fila[col])
     aplicar_valores(valores)
-    st.session_state["real"] = int(fila["Abandono"])
+    st.session_state["cliente_real"] = {"valores": valores, "abandono": int(fila["Abandono"])}
 
 
 def restablecer():
     aplicar_valores(valores_por_defecto())
-    st.session_state["real"] = None
+    st.session_state["cliente_real"] = None
+    st.session_state["resultado"] = None
 
 
 if "iniciado" not in st.session_state:
     aplicar_valores(valores_por_defecto())
-    st.session_state["real"] = None
+    st.session_state["cliente_real"] = None
+    st.session_state["resultado"] = None
     st.session_state["iniciado"] = True
-
-
-def al_cambiar():
-    # Si el usuario modifica algún valor, el cliente ya no es el real del conjunto de prueba.
-    st.session_state["real"] = None
 
 
 # --------------------------------------------------------------------------------------
@@ -197,31 +194,12 @@ def al_cambiar():
 with st.sidebar:
     st.markdown("## 🎬 Simulador de abandono")
     st.caption("Netflix Customer Churn · 6 modelos de clasificación")
-
-    modelo_sel = st.selectbox(
-        "Modelo de clasificación",
-        nombres_modelos,
-        index=nombres_modelos.index("Bosques aleatorios"),
-        format_func=lambda n: f"{ICONOS.get(n, '')} {n}",
-    )
-    info_sel = meta["modelos"][modelo_sel]
-    m = info_sel["metricas"]
-    c1, c2 = st.columns(2)
-    c1.metric("Exactitud", f"{m['Exactitud (Accuracy)']:.2%}")
-    c2.metric("AUC ROC", f"{m['AUC ROC']:.4f}")
-    c1.metric("Precisión", f"{m['Precisión (Precision)']:.2%}")
-    c2.metric("F1", f"{m['Puntaje F1']:.4f}")
-    if info_sel["hiperparametros"]:
-        with st.expander("Hiperparámetros elegidos"):
-            for k, v in info_sel["hiperparametros"].items():
-                st.write(f"`{k.split('__')[-1]}` = **{v}**")
-
     st.divider()
     st.markdown("**Datos del cliente**")
-    st.button("🎲 Cargar un cliente real (prueba)", on_click=cargar_cliente_real, width="stretch")
+    st.button("🎲 Cargar un cliente real (prueba)", on_click=cargar_cliente_real, width="stretch",
+              help="Llena el formulario con un cliente real del conjunto de prueba. Luego presiona Calcular.")
     st.button("↺ Restablecer valores", on_click=restablecer, width="stretch")
     st.caption(f"Clientes reales disponibles: {len(prueba)} del conjunto de prueba (20 %).")
-
     if reentrenados:
         st.warning("Se reentrenaron por compatibilidad: " + ", ".join(reentrenados))
 
@@ -232,8 +210,8 @@ with st.sidebar:
 st.markdown(
     f"""
     <h1 style="margin-bottom:0">Simulador de predicción de abandono de clientes</h1>
-    <p style="opacity:.75;margin-top:4px">Cambia las <b>variables independientes</b> del cliente y los modelos
-    entrenados calculan la <b>variable dependiente</b> <code>Abandono</code>
+    <p style="opacity:.75;margin-top:4px">Selecciona un modelo, escribe las <b>variables independientes</b> del cliente
+    y presiona <b>Calcular</b> para obtener la <b>variable dependiente</b> <code>Abandono</code>
     (<span style="color:{VERDE}">0 = permanece</span> · <span style="color:{ROJO}">1 = abandona</span>).</p>
     """,
     unsafe_allow_html=True,
@@ -245,42 +223,38 @@ tab_sim, tab_comp, tab_met, tab_info = st.tabs(
 
 
 # --------------------------------------------------------------------------------------
-# Controles de entrada
+# Funciones de apoyo
 # --------------------------------------------------------------------------------------
-def controles():
+def rango_texto(col):
+    r = meta["rangos"][col]
+    if col == "Horas_vistas":
+        return f"Entre {r['min']:.2f} y {r['max']:.2f}"
+    return f"Entre {int(r['min'])} y {int(r['max'])}"
+
+
+def campos_numericos():
     r = meta["rangos"]
-    eq = meta["equivalencias"]
-    st.markdown("#### Variables independientes")
-    a, b = st.columns(2)
-    with a:
-        st.slider(ETIQUETAS["Edad"], int(r["Edad"]["min"]), int(r["Edad"]["max"]), key="in_Edad", on_change=al_cambiar)
-        st.slider(ETIQUETAS["Horas_vistas"], float(r["Horas_vistas"]["min"]), float(r["Horas_vistas"]["max"]),
-                  step=0.01, key="in_Horas_vistas", on_change=al_cambiar)
-        st.slider(ETIQUETAS["Días_desde_último_acceso"], int(r["Días_desde_último_acceso"]["min"]),
-                  int(r["Días_desde_último_acceso"]["max"]), key="in_Días_desde_último_acceso", on_change=al_cambiar)
-        st.slider(ETIQUETAS["Número_de_perfiles"], int(r["Número_de_perfiles"]["min"]),
-                  int(r["Número_de_perfiles"]["max"]), key="in_Número_de_perfiles", on_change=al_cambiar)
-        st.selectbox(ETIQUETAS["Género"], list(eq["Género"]), format_func=TRADUCCION.get,
-                     key="in_Género", on_change=al_cambiar)
-    with b:
-        st.selectbox(ETIQUETAS["Tipo_de_suscripción"], list(eq["Tipo_de_suscripción"]), format_func=TRADUCCION.get,
-                     key="in_Tipo_de_suscripción", on_change=al_cambiar)
-        st.selectbox(ETIQUETAS["Método_de_pago"], list(eq["Método_de_pago"]), format_func=TRADUCCION.get,
-                     key="in_Método_de_pago", on_change=al_cambiar)
-        st.selectbox(ETIQUETAS["Región"], list(eq["Región"]), format_func=TRADUCCION.get,
-                     key="in_Región", on_change=al_cambiar)
-        st.selectbox(ETIQUETAS["Dispositivo"], list(eq["Dispositivo"]), format_func=TRADUCCION.get,
-                     key="in_Dispositivo", on_change=al_cambiar)
-        st.selectbox(ETIQUETAS["Género_favorito"], list(eq["Género_favorito"]), format_func=TRADUCCION.get,
-                     key="in_Género_favorito", on_change=al_cambiar)
+    for col in ["Edad", "Días_desde_último_acceso", "Número_de_perfiles"]:
+        st.number_input(f"{ETIQUETAS[col]} · {rango_texto(col).lower()}", min_value=int(r[col]["min"]),
+                        max_value=int(r[col]["max"]), step=1, key="in_" + col)
+    st.number_input(f"{ETIQUETAS['Horas_vistas']} · {rango_texto('Horas_vistas').lower()}",
+                    min_value=float(r["Horas_vistas"]["min"]), max_value=float(r["Horas_vistas"]["max"]),
+                    step=0.01, format="%.2f", key="in_Horas_vistas")
 
 
-def cliente_codificado():
-    """Devuelve el cliente actual como un dataFrame numérico, codificado igual que en el entrenamiento."""
-    fila = {}
-    for col in meta["variables"]:
-        val = st.session_state["in_" + col]
-        fila[col] = meta["equivalencias"][col][val] if col in meta["columnas_categoricas"] else val
+def campos_categoricos(columnas):
+    for col in columnas:
+        st.selectbox(ETIQUETAS[col], list(meta["equivalencias"][col]), format_func=TRADUCCION.get, key="in_" + col)
+
+
+def valores_actuales():
+    return {col: st.session_state["in_" + col] for col in meta["variables"]}
+
+
+def codificar(valores):
+    """Convierte los valores del cliente a la codificación numérica usada en el entrenamiento."""
+    fila = {col: (meta["equivalencias"][col][v] if col in meta["columnas_categoricas"] else v)
+            for col, v in valores.items()}
     return pd.DataFrame([fila], columns=meta["variables"])
 
 
@@ -310,7 +284,7 @@ def medidor(prob):
     return fig
 
 
-def tarjeta(pred, titulo_extra=""):
+def tarjeta(pred):
     color = ROJO if pred == 1 else VERDE
     texto = "ABANDONA" if pred == 1 else "PERMANECE"
     icono = "🚪" if pred == 1 else "✅"
@@ -318,7 +292,7 @@ def tarjeta(pred, titulo_extra=""):
         f"""
         <div style="border:2px solid {color};border-radius:14px;padding:18px 20px;text-align:center;
                     background:{color}14">
-          <div style="font-size:.9rem;opacity:.8">Predicción · Abandono = <b>{pred}</b>{titulo_extra}</div>
+          <div style="font-size:.9rem;opacity:.8">Predicción · Abandono = <b>{pred}</b></div>
           <div style="font-size:2.2rem;font-weight:800;color:{color};letter-spacing:.04em">{icono} {texto}</div>
         </div>
         """,
@@ -331,28 +305,79 @@ def tarjeta(pred, titulo_extra=""):
 # --------------------------------------------------------------------------------------
 with tab_sim:
     izq, der = st.columns([1.35, 1], gap="large")
+
     with izq:
-        controles()
-    X_cliente = cliente_codificado()
-    pred, prob = predecir(modelo_sel, X_cliente)
+        # Paso 1: elegir el modelo.
+        st.markdown("#### 1. Selecciona el modelo")
+        modelo_sel = st.selectbox(
+            "Modelo de clasificación", nombres_modelos, index=None, placeholder="Elige un modelo…",
+            format_func=lambda n: f"{ICONOS.get(n, '')} {n}", key="modelo_sel",
+        )
+        if modelo_sel:
+            m = meta["modelos"][modelo_sel]["metricas"]
+            c1, c2, c3, c4 = st.columns(4)
+            c1.metric("Exactitud", f"{m['Exactitud (Accuracy)']:.2%}")
+            c2.metric("Precisión", f"{m['Precisión (Precision)']:.2%}")
+            c3.metric("F1", f"{m['Puntaje F1']:.4f}")
+            c4.metric("AUC ROC", f"{m['AUC ROC']:.4f}")
+            if meta["modelos"][modelo_sel]["variables"] != meta["variables"]:
+                var = meta["modelos"][modelo_sel]["variables"][0]
+                st.caption(f"ℹ️ Este modelo solo usa una variable independiente: **{ETIQUETAS[var]}**. "
+                           "Las demás no cambian su predicción.")
+
+        # Paso 2: escribir los datos del cliente.
+        st.markdown("#### 2. Ingresa los datos del cliente")
+        with st.form("form_cliente", border=True):
+            a, b = st.columns(2)
+            with a:
+                campos_numericos()
+                campos_categoricos(["Género"])
+            with b:
+                campos_categoricos(["Tipo_de_suscripción", "Método_de_pago", "Región", "Dispositivo", "Género_favorito"])
+            calcular = st.form_submit_button("🔮 Calcular", type="primary", width="stretch")
+
+        if calcular:
+            if not modelo_sel:
+                st.warning("Primero selecciona un modelo en el paso 1.")
+            else:
+                valores = valores_actuales()
+                X_cliente = codificar(valores)
+                pred, prob = predecir(modelo_sel, X_cliente)
+                real = st.session_state.get("cliente_real")
+                st.session_state["resultado"] = {
+                    "modelo": modelo_sel, "pred": pred, "prob": prob, "valores": valores,
+                    "real": real["abandono"] if real and real["valores"] == valores else None,
+                }
+
+    # Paso 3: resultado.
     with der:
-        st.markdown(f"#### Resultado · {ICONOS.get(modelo_sel, '')} {modelo_sel}")
-        tarjeta(pred)
-        st.plotly_chart(medidor(prob), width="stretch", config={"displayModeBar": False})
-        real = st.session_state.get("real")
-        if real is not None:
-            acierto = real == pred
-            st.info(
-                f"Cliente real del conjunto de prueba · valor real de Abandono = **{real}** "
-                f"({'abandonó' if real == 1 else 'permaneció'}). "
-                + ("✅ El modelo **acertó**." if acierto else "❌ El modelo **se equivocó**.")
-            )
-        if meta["modelos"][modelo_sel]["variables"] != meta["variables"]:
-            var = meta["modelos"][modelo_sel]["variables"][0]
-            st.caption(f"ℹ️ Este modelo solo usa una variable independiente: **{ETIQUETAS[var]}**. "
-                       "Cambiar las demás no altera su predicción.")
-        with st.expander("Ver el cliente codificado que recibe el modelo"):
-            st.dataframe(X_cliente, hide_index=True, width="stretch")
+        st.markdown("#### 3. Resultado")
+        res = st.session_state.get("resultado")
+        if not res:
+            st.info("Selecciona un modelo, escribe los datos del cliente y presiona **Calcular**.")
+        else:
+            st.markdown(f"Calculado con **{ICONOS.get(res['modelo'], '')} {res['modelo']}**")
+            tarjeta(res["pred"])
+            st.plotly_chart(medidor(res["prob"]), width="stretch", config={"displayModeBar": False})
+            if res["real"] is not None:
+                acierto = res["real"] == res["pred"]
+                st.info(
+                    f"Cliente real del conjunto de prueba · valor real de Abandono = **{res['real']}** "
+                    f"({'abandonó' if res['real'] == 1 else 'permaneció'}). "
+                    + ("✅ El modelo **acertó**." if acierto else "❌ El modelo **se equivocó**.")
+                )
+            if modelo_sel and modelo_sel != res["modelo"]:
+                st.caption("⚠️ Cambiaste de modelo: presiona **Calcular** para obtener su resultado.")
+            if valores_actuales() != res["valores"]:
+                st.caption("⚠️ Los datos del formulario cambiaron: presiona **Calcular** para actualizar.")
+            with st.expander("Ver los datos usados en el cálculo"):
+                legible = {ETIQUETAS[k]: (TRADUCCION.get(v, v) if isinstance(v, str)
+                                          else (f"{v:.2f}" if isinstance(v, float) else str(v)))
+                           for k, v in res["valores"].items()}
+                st.dataframe(pd.DataFrame({"Variable": list(legible), "Valor": list(legible.values())}),
+                             hide_index=True, width="stretch")
+                st.caption("Codificación numérica que recibe el modelo:")
+                st.dataframe(codificar(res["valores"]), hide_index=True, width="stretch")
 
 
 # --------------------------------------------------------------------------------------
@@ -360,40 +385,45 @@ with tab_sim:
 # --------------------------------------------------------------------------------------
 with tab_comp:
     st.markdown("#### Mismo cliente, seis modelos")
-    st.caption("Los valores del cliente son los que están en la pestaña **Simulador**.")
-    filas = []
-    for nombre in nombres_modelos:
-        p, pr = predecir(nombre, X_cliente)
-        filas.append({"Modelo": f"{ICONOS.get(nombre, '')} {nombre}", "Predicción (Abandono)": p,
-                      "Resultado": "Abandona" if p == 1 else "Permanece",
-                      "Probabilidad de abandono": pr,
-                      "Exactitud del modelo": meta["modelos"][nombre]["metricas"]["Exactitud (Accuracy)"]})
-    comp = pd.DataFrame(filas)
+    res = st.session_state.get("resultado")
+    if not res:
+        st.info("Primero calcula un cliente en la pestaña **Simulador**; aquí se evaluará con los seis modelos.")
+    else:
+        st.caption("Se usan los datos del último cálculo hecho en la pestaña **Simulador**.")
+        X_cliente = codificar(res["valores"])
+        filas = []
+        for nombre in nombres_modelos:
+            p, pr = predecir(nombre, X_cliente)
+            filas.append({"Modelo": f"{ICONOS.get(nombre, '')} {nombre}", "Predicción (Abandono)": p,
+                          "Resultado": "Abandona" if p == 1 else "Permanece",
+                          "Probabilidad de abandono": pr,
+                          "Exactitud del modelo": meta["modelos"][nombre]["metricas"]["Exactitud (Accuracy)"]})
+        comp = pd.DataFrame(filas)
 
-    votos = int(comp["Predicción (Abandono)"].sum())
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Modelos que predicen abandono", f"{votos} de 6")
-    c2.metric("Probabilidad promedio", f"{comp['Probabilidad de abandono'].mean():.1%}")
-    c3.metric("Decisión por mayoría", "Abandona" if votos > 3 else ("Empate" if votos == 3 else "Permanece"))
+        votos = int(comp["Predicción (Abandono)"].sum())
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Modelos que predicen abandono", f"{votos} de 6")
+        c2.metric("Probabilidad promedio", f"{comp['Probabilidad de abandono'].mean():.1%}")
+        c3.metric("Decisión por mayoría", "Abandona" if votos > 3 else ("Empate" if votos == 3 else "Permanece"))
 
-    orden = comp.sort_values("Probabilidad de abandono")
-    fig = go.Figure(go.Bar(
-        x=orden["Probabilidad de abandono"] * 100, y=orden["Modelo"], orientation="h",
-        marker_color=[ROJO if v >= 0.5 else VERDE for v in orden["Probabilidad de abandono"]],
-        text=[f"{v:.1%}" for v in orden["Probabilidad de abandono"]], textposition="outside",
-    ))
-    fig.add_vline(x=50, line_dash="dash", line_color="#888", annotation_text="Umbral 50 %")
-    fig.update_layout(height=340, xaxis=dict(range=[0, 110], title="Probabilidad de abandono (%)"),
-                      margin=dict(l=10, r=10, t=30, b=10), paper_bgcolor="rgba(0,0,0,0)")
-    st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
+        orden = comp.sort_values("Probabilidad de abandono")
+        fig = go.Figure(go.Bar(
+            x=orden["Probabilidad de abandono"] * 100, y=orden["Modelo"], orientation="h",
+            marker_color=[ROJO if v >= 0.5 else VERDE for v in orden["Probabilidad de abandono"]],
+            text=[f"{v:.1%}" for v in orden["Probabilidad de abandono"]], textposition="outside",
+        ))
+        fig.add_vline(x=50, line_dash="dash", line_color="#888", annotation_text="Umbral 50 %")
+        fig.update_layout(height=340, xaxis=dict(range=[0, 110], title="Probabilidad de abandono (%)"),
+                          margin=dict(l=10, r=10, t=30, b=10), paper_bgcolor="rgba(0,0,0,0)")
+        st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
 
-    st.dataframe(
-        comp, hide_index=True, width="stretch",
-        column_config={
-            "Probabilidad de abandono": st.column_config.ProgressColumn(format="percent", min_value=0, max_value=1),
-            "Exactitud del modelo": st.column_config.NumberColumn(format="%.4f"),
-        },
-    )
+        st.dataframe(
+            comp, hide_index=True, width="stretch",
+            column_config={
+                "Probabilidad de abandono": st.column_config.ProgressColumn(format="percent", min_value=0, max_value=1),
+                "Exactitud del modelo": st.column_config.NumberColumn(format="%.4f"),
+            },
+        )
 
 
 # --------------------------------------------------------------------------------------
